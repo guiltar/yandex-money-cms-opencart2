@@ -228,8 +228,11 @@ class ControllerFeedYamodule extends Controller {
 			case 'kassa':
 				$this->saveData($this->fields_kassa);
 				$this->session->data['kassa_status'][] = $this->success_alert('Настройки успешно сохранены!');
-				if($this->request->post['ya_kassa_active'] == 1)
+				if($this->request->post['ya_kassa_active'] == 1){
+					$testUrl = $this->url->link('payment/yamodule/test', 'token=' . $this->session->data['token'], 'SSL');
+					$this->session->data['kassa_status'][] = '<div class="alert"><a  class="btn btn-success" target="_blank" href="'.$testUrl.'">Проверить работу модуля</a></div>';
 					$this->model_setting_setting->editSetting('ya_p2p_active', array('ya_p2p_active' => 0));
+				}
 				break;
 			case 'p2p':
 				$this->saveData($this->fields_p2p);
@@ -813,6 +816,7 @@ class ControllerFeedYamodule extends Controller {
 		$this->model_user_user_group->addPermission($this->user->getGroupId(), 'modify', 'feed/yamodule');
 		$this->model_user_user_group->addPermission($this->user->getGroupId(), 'access', 'yamodule/mws');
 		$this->model_user_user_group->addPermission($this->user->getGroupId(), 'modify', 'yamodule/mws');
+		$this->model_user_user_group->addPermission($this->user->getGroupId(), 'access', 'payment/test');
 	}
 
 	public function addCustomer($data) {

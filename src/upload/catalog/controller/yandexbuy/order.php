@@ -140,9 +140,9 @@ class ControllerYandexbuyOrder extends Controller
 						$order_data['currency_id'] = $this->currency->getId();
 						$order_data['currency_code'] = $this->currency->getCode();
 						$order_data['currency_value'] = $this->currency->getValue($this->currency->getCode());
-						$order_data['ip'] = $this->request->server['REMOTE_ADDR'];
-						$order_data['forwarded_ip'] = $this->request->server['HTTP_X_FORWARDED_FOR'];
-						$order_data['user_agent'] = $this->request->server['HTTP_USER_AGENT'];
+						$order_data['ip'] = '127.0.0.1';//$this->request->server['REMOTE_ADDR'];
+						$order_data['forwarded_ip'] = '127.0.0.1';//$this->request->server['HTTP_X_FORWARDED_FOR'];
+						$order_data['user_agent'] = 'Yandex';//$this->request->server['HTTP_USER_AGENT'];
 						$order_data['accept_language'] = '';
 						$order_data['invoice_prefix'] = $this->config->get('config_invoice_prefix');
 						$order_data['store_id'] = $this->config->get('config_store_id');

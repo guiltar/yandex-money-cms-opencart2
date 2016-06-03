@@ -92,17 +92,17 @@
 									<div class='col-sm-12'>
 										<p><?php echo $kassa_text_get_setting; ?></p>
 											<div class="form-group">
-												<label for="ya_kassa_sid" class="col-sm-3 control-label">shop ID</label>
+												<label for="ya_kassa_sid" class="col-sm-3 control-label">Shop ID</label>
 												<div class="col-sm-9">
 													<input name="ya_kassa_sid" value="<?php echo $ya_kassa_sid; ?>" id="ya_kassa_sid" class="form-control">
 													<p class="help-block"><?php echo $kassa_text_sid; ?></p>
 												</div>
-												<label for="ya_kassa_scid" class="col-sm-3 control-label">Scid</label>
+												<label for="ya_kassa_scid" class="col-sm-3 control-label">scid</label>
 												<div class="col-sm-9">
 													<input name="ya_kassa_scid" value="<?php echo $ya_kassa_scid; ?>" id="ya_kassa_scid" class="form-control">
 													<p class="help-block"><?php echo $kassa_text_scid; ?></p>
 												</div>
-												<label for="ya_kassa_pw" class="col-sm-3 control-label">shopPassword</label>
+												<label for="ya_kassa_pw" class="col-sm-3 control-label">ShopPassword</label>
 												<div class="col-sm-9">
 													<input name="ya_kassa_pw" value="<?php echo $ya_kassa_pw; ?>" id="ya_kassa_pw" class="form-control">
 													<p class="help-block"><?php echo $kassa_text_pw; ?></p>
