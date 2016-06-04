@@ -44,10 +44,12 @@ class ControllerPaymentYamodule extends Controller
         }
 		$data['method_label'] =  $this->language->get('text_method');
 		$data['order_text'] =  $this->language->get('text_order');
-		if (file_exists(DIR_TEMPLATE . $this->config->get('config_template') . '/template/payment/yamodule.tpl')) {
-			return $this->load->view($this->config->get('config_template') . '/template/payment/yamodule.tpl', $data);
+		$end_tpl = (version_compare(VERSION, "2.2.0", '>='))?"":".tpl";
+		$begin_tpl = (version_compare(VERSION, "2.2.0", '>='))?"":"default/template/";
+		if (file_exists(DIR_TEMPLATE . $this->config->get('config_template') . '/template/payment/yamodule'.$end_tpl)) {
+			return $this->load->view($this->config->get('config_template') . '/template/payment/yamodule'.$end_tpl, $data);
 		} else {
-			return $this->load->view('default/template/payment/yamodule.tpl', $data);
+			return $this->load->view($begin_tpl.'payment/yamodule'.$end_tpl, $data);
 		}
 	}
 	public function confirm(){
@@ -326,32 +328,29 @@ class ControllerPaymentYamodule extends Controller
 		$data = $_POST;
 		if($this->config->get('ya_kassa_log'))
 			$this->log_save('callback:  request '.serialize($_REQUEST));
-		$this->load->model('yamodel/yamoney');
-		$this->model_yamodel_yamoney->password = $this->config->get('ya_kassa_pw');
-		$this->model_yamodel_yamoney->password2 = $this->config->get('ya_p2p_pw');
-		$this->model_yamodel_yamoney->shopid = $this->config->get('ya_kassa_sid');
-		$order_id = isset($data[self::ORDERNUMBER]) ? (int) substr($data[self::ORDERNUMBER], strlen(self::PREFIX_DEBUG), strlen($data[self::ORDERNUMBER])) : 0;
-		if ($this->config->get('ya_kassa_active') && isset($data['action']) && !empty($data['action']))
-		{
-			$this->log_save('callback:  orderid='.$order_id);
-			if ($data['action'] == 'checkOrder')
-			{
-				if($this->config->get('ya_kassa_log'))
-					$this->log_save('callback:  checkOrder');
-				$this->model_yamodel_yamoney->checkOrder($data, true, false);
-			}
 
-			if ($data['action'] == 'paymentAviso'){
-				if ($order_id > 0)
-					$this->makeOrder($order_id, false);
-				if($this->config->get('ya_kassa_log'))
-					$this->log_save('callback:  Aviso');
-				$this->model_yamodel_yamoney->checkOrder($data, true, true);
+		$this->load->model('yamodel/yamoney');
+		$password = $this->config->get('ya_kassa_pw');
+		//$this->model_yamodel_yamoney->password2 = $this->config->get('ya_p2p_pw');
+		$shopid = $this->config->get('ya_kassa_sid');
+
+		$order_id = isset($data[self::ORDERNUMBER]) ? (int) substr($data[self::ORDERNUMBER], strlen(self::PREFIX_DEBUG), strlen($data[self::ORDERNUMBER])) : 0;
+		if ($this->config->get('ya_kassa_active') && isset($data['action']) && !empty($data['action'])){
+			$this->log_save('callback:  orderid='.$order_id);
+			if($this->model_yamodel_yamoney->checkSign($data, $password, $shopid, true)){
+				$this->load->model('checkout/order');
+				$order_info = $this->model_checkout_order->getOrder($order_id);
+				if (number_format($data['orderSumAmount'], 2)>=number_format($order_info['total'],2)){
+					if ($data['action'] == 'paymentAviso'){
+						if ($order_id > 0)	$this->makeOrder($order_id, false);
+					}
+					$this->model_yamodel_yamoney->sendCode($data, $shopid, '0', "ok");
+				}else{
+					$this->model_yamodel_yamoney->sendCode($data, $shopid, '100', "Error total amount");
+				}
 			}
-		}
-		else
-		{	
-			exit('error settings yamodule or empty request');
+		}else{
+			exit("You aren't Yandex.Money.");
 		}
 	}
 

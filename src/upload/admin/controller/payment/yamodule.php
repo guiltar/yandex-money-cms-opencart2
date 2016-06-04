@@ -11,7 +11,8 @@ class ControllerPaymentYamodule extends Controller {
 		$data['header'] = $this->load->controller('common/header');
 		$data['column_left'] = $this->load->controller('common/column_left');
 		$data['footer'] = $this->load->controller('common/footer');
-		$this->response->setOutput($this->load->view('yamodule/email-inv.tpl', $data));
+		$end_tpl = (version_compare(VERSION, "2.2.0", '>='))?"":".tpl";
+		$this->response->setOutput($this->load->view('yamodule/email-inv'.$end_tpl, $data));
 	}
 
 	public function test(){
@@ -32,7 +33,8 @@ class ControllerPaymentYamodule extends Controller {
 		$data['header'] = $this->load->controller('common/header');
 		$data['column_left'] = $this->load->controller('common/column_left');
 		$data['footer'] = $this->load->controller('common/footer');
-		$this->response->setOutput($this->load->view('yamodule/check.tpl', $data));
+		$end_tpl = (version_compare(VERSION, "2.2.0", '>='))?"":".tpl";
+		$this->response->setOutput($this->load->view('yamodule/check'.$end_tpl, $data));
 	}
 	public function install() {
 		$this->load->model('setting/setting');

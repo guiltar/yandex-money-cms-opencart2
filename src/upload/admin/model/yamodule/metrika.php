@@ -2,21 +2,9 @@
 
 Class ModelYamoduleMetrika extends Model
 {
-	var $client_id;
-	var $client_secret;
-	var $username;
-	var $password;
-	var $number;
-	var $token;
 	public $url_api = 'https://api-metrika.yandex.ru/management/v1/';
 	
-	public function initData($token, $number)
-	{
-		$this->number = $number;
-		$this->token = $token ? $token : '';
-	}
-	
-	public function processCounter()
+	public function processCounter($number, $token)
 	{
 		$data = array(
 			'YA_METRIKA_CART' =>  array(
@@ -64,28 +52,28 @@ Class ModelYamoduleMetrika extends Model
 		);
 		
 		$otvet = false;
-		$counter = $this->SendResponse('counter/'.$this->number, array(), array(), 'GET');
+		$counter = $this->SendResponse('counter/'.$number, $token, array(), array(), 'GET');
 		if(!empty($counter->counter->code))
 		{
 			$this->load->model('setting/setting');
 			$this->model_setting_setting->editSetting('ya_metrika_code', array('ya_metrika_code' => $counter->counter->code));
-			$otvet = $this->editCounter();
+			$otvet = $this->editCounter($number, $token);
 			if($otvet)
 			{
 				$goals = array();
-				$tmp_goals = $this->getCounterGoals();
+				$tmp_goals = $this->getCounterGoals($number, $token);
 					foreach($tmp_goals->goals as $goal)
 						$goals[$goal->name] = $goal;
 
 				if($this->Cget('ya_metrika_cart'))
-					$res['cart'] = $this->addCounterGoal(array('goal' => $data['YA_METRIKA_CART']));
+					$res['cart'] = $this->addCounterGoal($number, $token, array('goal' => $data['YA_METRIKA_CART']));
 				elseif (isset($goals['YA_METRIKA_CART']))
-					$res['cart'] = $this->deleteCounterGoal($goals['YA_METRIKA_CART']->id);
+					$res['cart'] = $this->deleteCounterGoal($number, $token, $goals['YA_METRIKA_CART']->id);
 					
 				if($this->Cget('ya_metrika_order'))
-					$res['order'] = $this->addCounterGoal(array('goal' => $data['YA_METRIKA_ORDER']));
+					$res['order'] = $this->addCounterGoal($number, $token, array('goal' => $data['YA_METRIKA_ORDER']));
 				elseif (isset($goals['YA_METRIKA_ORDER']))
-					$res['order'] = $this->deleteCounterGoal($goals['YA_METRIKA_ORDER']->id);
+					$res['order'] = $this->deleteCounterGoal($number, $token, $goals['YA_METRIKA_ORDER']->id);
 				
 				$this->session->data['metrika_status'][] = $this->success_alert('Данные метрики отправлены на сервер!');
 			}
@@ -99,21 +87,21 @@ Class ModelYamoduleMetrika extends Model
 	}
 
 	// Все цели счётчика
-	public function getCounterGoals()
+	public function getCounterGoals($number, $token)
 	{
-		return $this->SendResponse('counter/'.$this->number.'/goals', array(), array(), 'GET');
+		return $this->SendResponse('counter/'.$number.'/goals', $token, array(), array(), 'GET');
 	}
 	
 	// Добавление цели
-	public function addCounterGoal($params)
+	public function addCounterGoal($number, $token, $params)
 	{
-		return $this->SendResponse('counter/'.$this->number.'/goals', array(), $params, 'POSTJSON');
+		return $this->SendResponse('counter/'.$number.'/goals', $token, array(), $params, 'POSTJSON');
 	}
 	
 	// Удаление цели
-	public function deleteCounterGoal($goal)
+	public function deleteCounterGoal($number, $token, $goal)
 	{
-		return $this->SendResponse('counter/'.$this->number.'/goal/'.$goal, array(), array(), 'DELETE');
+		return $this->SendResponse('counter/'.$number.'/goal/'.$goal, $token, array(), array(), 'DELETE');
 	}
 
 	public function Cget($name)
@@ -122,7 +110,7 @@ Class ModelYamoduleMetrika extends Model
 		return $query->row['value'];
 	}
 
-	public function editCounter()
+	public function editCounter($number, $token)
 	{
 		$params = array('counter'=>array(
 			'goals_remove' => 0,
@@ -136,13 +124,13 @@ Class ModelYamoduleMetrika extends Model
 		));
 
 		if(count($params)){
-			return $this->SendResponse('counter/'.$this->number, array(), $params, 'PUT');
+			return $this->SendResponse('counter/'.$number, $token, array(), $params, 'PUT');
 		}
 	}
 	
-	public function SendResponse($to, $headers, $params, $type, $pretty = 1)
+	public function SendResponse($to, $token, $headers, $params, $type, $pretty = 1)
 	{
-		$response = $this->post($this->url_api.$to.'?pretty=1&oauth_token='.$this->token, $headers, $params, $type);
+		$response = $this->post($this->url_api.$to.'?pretty=1&oauth_token='.$token, $headers, $params, $type);
 		$data = json_decode($response->body);
 		if($response->status_code == 200){
 			return $data;

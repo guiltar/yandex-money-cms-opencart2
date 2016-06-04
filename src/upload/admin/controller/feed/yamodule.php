@@ -244,8 +244,9 @@ class ControllerFeedYamodule extends Controller {
 				$this->saveData($this->fields_metrika);
 				$this->session->data['metrika_status'][] = $this->success_alert('Данные метрики сохранены!');
 				$this->load->model('yamodule/metrika');
-				$this->model_yamodule_metrika->initData($this->config->get('ya_metrika_o2auth'), ($this->request->post['ya_metrika_number'] != $this->config->get('ya_metrika_number') ? $this->request->post['ya_metrika_number'] : $this->config->get('ya_metrika_number')));
-				$this->model_yamodule_metrika->processCounter();
+				$yaMetrika_token = $this->config->get('ya_metrika_o2auth');
+				$yaMetrika_number = ($this->request->post['ya_metrika_number'] != $this->config->get('ya_metrika_number') ? $this->request->post['ya_metrika_number'] : $this->config->get('ya_metrika_number'));
+				$this->model_yamodule_metrika->processCounter($yaMetrika_number, $yaMetrika_token);
 				break;
 			case 'market':
 				$this->session->data['market_status'][] = $this->success_alert('Настройки успешно сохранены!');
@@ -705,8 +706,8 @@ class ControllerFeedYamodule extends Controller {
 			$data['p2p_status'] = array_merge($data['p2p_status'], $this->session->data['p2p_status']);
 		if (isset($this->session->data['pokupki_status']) && !empty($this->session->data['pokupki_status']))
 			$data['pokupki_status'] = array_merge($data['pokupki_status'], $this->session->data['pokupki_status']);
-		
-		$this->response->setOutput($this->load->view('feed/yamodule.tpl', $data));
+		$end_tpl = (version_compare(VERSION, "2.2.0", '>='))?"":".tpl";
+		$this->response->setOutput($this->load->view('feed/yamodule'.$end_tpl, $data));
 	}
 
 	public function errors_alert($text)

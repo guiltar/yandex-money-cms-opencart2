@@ -2,19 +2,12 @@
 
 Class ModelYamodelYamarket extends Model
 {
-
-	var $from_charset = 'windows-1251';
-	var $shop = array('name' => '', 'company' => '', 'url' => '', 'platform' => 'ya_opencart');
-	var $currencies = array();
-	var $categories = array();
-	var $offers = array();
-
 	public function getCategories($parent_id = 0) {
 		$query = $this->db->query("SELECT * FROM " . DB_PREFIX . "category c
 								LEFT JOIN " . DB_PREFIX . "category_description cd ON (c.category_id = cd.category_id)
 								LEFT JOIN " . DB_PREFIX . "category_to_store c2s ON (c.category_id = c2s.category_id)
 								AND cd.language_id = '" . (int)$this->config->get('config_language_id') . "'
-								AND c2s.store_id = '" . (int)$this->config->get('config_store_id') . "' 
+								AND c2s.store_id = '" . (int)$this->config->get('config_store_id') . "'
 								AND c.status = '1' ORDER BY c.sort_order, LCASE(cd.name)");
 
 		return $query->rows;
@@ -49,7 +42,7 @@ Class ModelYamodelYamarket extends Model
 		$lang = (int)$this->config->get('config_language_id');
 
 		$query = $this->db->query("SELECT pov.*, od.name AS option_name, ovd.name
-			FROM " . DB_PREFIX . "product_option_value pov 
+			FROM " . DB_PREFIX . "product_option_value pov
 			LEFT JOIN " . DB_PREFIX . "option_value_description ovd ON (pov.option_value_id = ovd.option_value_id)
 			LEFT JOIN " . DB_PREFIX . "option_description od ON (od.option_id = pov.option_id) AND (od.language_id = '$lang')
 			WHERE pov.option_id IN (". implode(',', array_map('intval', $option_ids)) .") AND pov.product_id = '". (int)$product_id."'
@@ -81,182 +74,5 @@ Class ModelYamodelYamarket extends Model
 				AND ad.language_id = '" . (int)$this->config->get('config_language_id') . "'
 				ORDER BY pa.attribute_id");
 		return $query->rows;
-	}
-
-	function yml($from_charset = 'windows-1251')
-	{
-		$this->from_charset = trim(strtolower($from_charset));
-	}
-
-
-	function convert_array_to_tag($arr)
-	{
-		$s = '';
-		foreach($arr as $tag => $val)
-		{
-			if($tag == 'weight' && (int)$val == 0)
-				continue;
-
-			if($tag == 'picture')
-			{
-				foreach ($val as $v){
-					$s .= '<'.$tag.'>'.$v.'</'.$tag.'>';
-					$s .= "\r\n";
-				}
-			}
-			elseif($tag == 'param')
-			{
-				foreach ($val as $v){
-					$s .= '<param name="'.$this->prepare_field($v['name']).'">'.$this->prepare_field($v['value']).'</param>';
-					$s .= "\r\n";
-				}
-			}
-			else
-			{
-				$s .= '<'.$tag.'>'.$val.'</'.$tag.'>';
-				$s .= "\r\n";
-			}
-		}
-
-		return $s;
-	}
-
-	function convert_array_to_attr($arr, $tagname, $tagvalue = '')
-	{
-		$s = '<'.$tagname.' ';
-		foreach($arr as $attrname=>$attrval)
-			$s .= $attrname . '="'.$attrval.'" ';
-
-		$s .= ($tagvalue!='') ? '>'.$tagvalue.'</'.$tagname.'>' : '/>';
-		$s .= "\r\n";
-		return $s;
-	}
-
-	function prepare_field($s)
-	{
-		$from = array('"', '&', '>', '<', '\'');
-		$to = array('&quot;', '&amp;', '&gt;', '&lt;', '&apos;');
-		$s = str_replace($from, $to, $s);
-		$s=preg_replace('!<[^>]*?>!', ' ', $s);
-		// if ($this->from_charset!='windows-1251') $s = iconv($this->from_charset, 'windows-1251', $s);
-		$s = preg_replace('#[\x00-\x08\x0B-\x0C\x0E-\x1F]+#is', ' ', $s);
-		return trim($s);
-	}
-
-	function set_shop($name, $company, $url)
-	{
-		$this->shop['name'] = $this->prepare_field($name);
-		$this->shop['name'] = substr($this->shop['name'], 0, 20);
-		$this->shop['company'] = $this->prepare_field($company);
-		$this->shop['url'] = $this->prepare_field($url);
-	}
-
-	function add_currency($id, $rate = 'CBRF', $plus = 0)
-	{
-		$rate = strtoupper($rate);
-		$plus = str_replace(',', '.', $plus);
-		if ($rate=='CBRF' && $plus>0)
-			$this->currencies[] = array('id'=>$this->prepare_field(strtoupper($id)), 'rate'=>'CBRF', 'plus'=>(float)$plus);
-		else
-		{
-			$rate = str_replace(',', '.', $rate);
-			$this->currencies[] = array('id'=>$this->prepare_field(strtoupper($id)), 'rate'=>(float)$rate);
-		}
-		return true;
-	}
-
-	function add_category($name, $id, $parent_id = -1)
-	{
-		if ((int)$id<1||trim($name)=='') return false;
-		if ((int)$parent_id>0)
-			$this->categories[] = array('id'=>(int)$id, 'parentId'=>(int)$parent_id, 'name'=>$this->prepare_field($name));
-		else
-			$this->categories[] = array('id'=>(int)$id, 'name'=>$this->prepare_field($name));
-		return true;
-	}
-
-	function add_offer($id, $data, $available = true)
-	{
-		$allowed = array('url', 'price', 'currencyId', 'categoryId', 'picture', 'store', 'pickup', 'delivery', 'name', 'vendor', 'vendorCode', 'model', 'description', 'sales_notes', 'downloadable', 'weight', 'dimensions', 'param', 'sales_notes', 'country_of_origin');
-		$param = array();
-		// $data['model'] = $data['id'].'_tovar';
-		// $data['vendor'] = $data['id'].'_tovar';
-		if(isset($data['param']))
-			$param = $data['param'];
-		foreach($data as $k => $v)
-		{
-			if (!in_array($k, $allowed)) unset($data[$k]);
-			if(!in_array($k, array('picture','param','rec','description')))	$data[$k] = strip_tags($this->prepare_field($v));
-			if ($k=='description') {
-				$data[$k] = preg_replace('|<[/]?[^>]+?>|', '', trim(html_entity_decode ($v)));
-				$data[$k] = preg_replace("/&#?[a-z0-9]+;/i", '', $data[$k]);
-				if (strlen($data[$k])>175) {
-					$iCut = strpos($data[$k], ' ', 160);
-					$iCut = ($iCut > 175) ? strpos($data[$k], ' ', 150) : $iCut;
-					$data[$k] = substr($data[$k], 0, $iCut);
-				}
-			}
-		}
-		$tmp = $data;
-		$data = array();
-		foreach($allowed as $key)
-			if (isset($tmp[$key]) && !empty($tmp[$key]))
-				$data[$key] = $tmp[$key];
-
-		$out = array('id' => $id, 'data' => $data, 'available' => ($available) ? 'true' : 'false');
-		if(!$this->config->get('ya_market_prostoy'))
-			$out['type'] = 'vendor.model';
-		$this->offers[] = $out;
-	}
-
-	function get_xml_header()
-	{
-		return '<?xml version="1.0" encoding="utf-8"?>'.
-		'<yml_catalog date="'.date('Y-m-d H:i').'">';
-	}
-
-	function get_xml_shop()
-	{
-		$s = '<shop>' . "\r\n";
-		$s .= $this->convert_array_to_tag($this->shop);
-		$s .= '<currencies>' . "\r\n";
-		foreach($this->currencies as $currency)
-			$s .= $this->convert_array_to_attr($currency, 'currency');
-
-		$s .= '</currencies>' . "\r\n";
-		$s .= '<categories>' . "\r\n";
-		foreach($this->categories as $category)
-		{
-			$category_name = $category['name'];
-			unset($category['name']);
-			$s .= $this->convert_array_to_attr($category, 'category', $category_name);
-		}
-		$s .= '</categories>' . "\r\n";
-
-		if($this->config->get('ya_market_homecarrier')) $s .= '<local_delivery_cost>'.$this->config->get('ya_market_localcoast').'</local_delivery_cost>' . "\r\n"; //TODO Доработать на основании https://yandex.ru/support/partnermarket/elements/delivery-options.xml
-
-		$s .= '<offers>' . "\r\n";
-		foreach($this->offers as $offer)
-		{
-			$data = $offer['data'];
-			unset($offer['data']);
-			$s .= $this->convert_array_to_attr($offer, 'offer', $this->convert_array_to_tag($data));
-		}
-		$s .= '</offers>' . "\r\n";
-		$s .= '</shop>';
-		return $s;
-	}
-
-	function get_xml_footer()
-	{
-		return '</yml_catalog>';
-	}
-
-	function get_xml()
-	{
-		$xml = $this->get_xml_header();
-		$xml .= $this->get_xml_shop();
-		$xml .= $this->get_xml_footer();
-		return $xml;
 	}
 }

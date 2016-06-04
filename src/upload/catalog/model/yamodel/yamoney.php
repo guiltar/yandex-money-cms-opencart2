@@ -1,73 +1,32 @@
 <?php
-
-Class ModelYamodelYamoney extends Model
-{
-	public $org_mode;
-	public $shopid;
-	public $password;
-	public $password2;
-
-	public function __construct(){
-		
+Class ModelYamodelYamoney extends Model{
+	public function checkSign($callbackParams, $password, $sid, $bKassa = false){
+		if (isset($callbackParams['md5']) && $bKassa == true){
+			$string = $callbackParams['action'].';'.$callbackParams['orderSumAmount'].';'.$callbackParams['orderSumCurrencyPaycash'].';'.$callbackParams['orderSumBankPaycash'].';'.$sid.';'.$callbackParams['invoiceId'].';'.$callbackParams['customerNumber'].';'.$password;
+			if (strtoupper(md5($string))!==strtoupper($callbackParams['md5'])){
+				$this->sendCode($callbackParams, $sid, '1', "");
+				return false;
+			}
+		}else{
+			$string = $callbackParams['notification_type'].'&'.$callbackParams['operation_id'].'&'.$callbackParams['amount'].'&'.$callbackParams['currency'].'&'.$callbackParams['datetime'].'&'.$callbackParams['sender'].'&'.$callbackParams['codepro'].'&'.$password.'&'.$callbackParams['label'];
+			if (sha1($string) !== $callbackParams['sha1_hash']){
+				header('HTTP/1.0 401 Unauthorized');
+				return false;
+			}
+		}
+		return true;
+	}
+	public function sendCode($callbackParams, $sid, $code, $message=''){
+		if (!$this->org_mode) return false;
+		header("Content-type: text/xml; charset=utf-8");
+		$xml = '<?xml version="1.0" encoding="UTF-8"?>
+			<'.$callbackParams['action'].'Response performedDatetime="'.date("c").'" code="'.$code.'" invoiceId="'.$callbackParams['invoiceId'].'" techMessage="'.$message.'" shopId="'.$sid.'"/>';
+		echo $xml;
 	}
 
-	public static function log_save($logtext)
-	{
+	public static function log_save($logtext){
 		$error_log = new Log('error.log');
 		$error_log->write($logtext.PHP_EOL);
 		$error_log = null;
-	}
-
-	public function checkSign($callbackParams){
-		$string = $callbackParams['action'].';'.$callbackParams['orderSumAmount'].';'.$callbackParams['orderSumCurrencyPaycash'].';'.$callbackParams['orderSumBankPaycash'].';'.$callbackParams['shopId'].';'.$callbackParams['invoiceId'].';'.$callbackParams['customerNumber'].';'.$this->password;
-		$md5 = strtoupper(md5($string));
-		$this->log_save('kassa: sign '.($callbackParams['md5']==$md5).' '.$callbackParams['md5'].' '.$md5);
-		return ($callbackParams['md5']==$md5);
-	}
-
-	public function checkOrder($callbackParams, $sendCode=FALSE, $aviso=FALSE){ 
-		
-		if ($this->checkSign($callbackParams)){
-			$code = 0;
-		}else{
-			$code = 1;
-		}
-		if ($sendCode){
-			if ($aviso){
-				$this->log_save('kassa: send message="sendAviso" performedDatetime="'.date("c").'" code="'.$code.'" invoiceId="'.$callbackParams['invoiceId'].'" shopId="'.$this->shopid.'"');
-				$this->sendAviso($callbackParams, $code);	
-			}else{
-				$this->log_save('kassa: send message="checkOrder" performedDatetime="'.date("c").'" code="'.$code.'" invoiceId="'.$callbackParams['invoiceId'].'" shopId="'.$this->shopid.'"');
-				$this->sendCode($callbackParams, $code);	
-			}
-			exit;
-		}else{
-			return $code;
-		}
-	}
-
-	public function sendCode($callbackParams, $code){
-		header("Content-type: text/xml; charset=utf-8");
-		$xml = '<?xml version="1.0" encoding="UTF-8"?>
-			<checkOrderResponse performedDatetime="'.date("c").'" code="'.$code.'" invoiceId="'.$callbackParams['invoiceId'].'" shopId="'.$this->shopid.'"/>';
-		die($xml);
-	}
-
-	public function sendAviso($callbackParams, $code){
-		header("Content-type: text/xml; charset=utf-8");
-		$xml = '<?xml version="1.0" encoding="UTF-8"?>
-			<paymentAvisoResponse performedDatetime="'.date("c").'" code="'.$code.'" invoiceId="'.$callbackParams['invoiceId'].'" shopId="'.$this->shopid.'"/>';
-		die($xml);
-	}
-
-	public function individualCheck($callbackParams){
-		$string = $callbackParams['notification_type'].'&'.$callbackParams['operation_id'].'&'.$callbackParams['amount'].'&'.$callbackParams['currency'].'&'.$callbackParams['datetime'].'&'.$callbackParams['sender'].'&'.$callbackParams['codepro'].'&'.$this->password2.'&'.$callbackParams['label'];
-		$check = (sha1($string) == $callbackParams['sha1_hash']);
-		if (!$check){
-			header('HTTP/1.0 401 Unauthorized');
-			return false;
-		}
-
-		return true;	
 	}
 }
