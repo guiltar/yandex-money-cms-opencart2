@@ -17,7 +17,7 @@ Class ModelYamodelYamoney extends Model{
 		return true;
 	}
 	public function sendCode($callbackParams, $sid, $code, $message=''){
-		if (!$this->org_mode) return false;
+		//if (!$this->org_mode) return false;
 		header("Content-type: text/xml; charset=utf-8");
 		$xml = '<?xml version="1.0" encoding="UTF-8"?>
 			<'.$callbackParams['action'].'Response performedDatetime="'.date("c").'" code="'.$code.'" invoiceId="'.$callbackParams['invoiceId'].'" techMessage="'.$message.'" shopId="'.$sid.'"/>';
