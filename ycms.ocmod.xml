@@ -27,7 +27,7 @@
 			<search position="replace"><![CDATA[<td class="text-right"><a href="<?php echo $order['view']; ?>" data-toggle="tooltip" title="<?php echo $button_view; ?>" class="btn btn-info"><i class="fa fa-eye"></i></a> <a href="<?php echo $order['edit']; ?>" data-toggle="tooltip" title="<?php echo $button_edit; ?>" class="btn btn-primary"><i class="fa fa-pencil"></i></a>]]></search>
 			<add><![CDATA[<td class="text-right">
 				<a href="<?php echo $order['view']; ?>" data-toggle="tooltip" title="<?php echo $button_view; ?>" class="btn btn-info"><i class="fa fa-eye"></i></a>
-				<?php if($order['payment_code']=='yamodule'){ ?>
+				<?php if(isset($order['payment_code']) && $order['payment_code']=='yamodule'){ ?>
 				<a href="<?php echo $order['mws']; ?>" data-toggle="tooltip" title="Управление заказом" class="btn btn-success"><i class="fa fa-briefcase"></i></a>
 				<?php } ?>
 				<a href="<?php echo $order['edit']; ?>" data-toggle="tooltip" title="<?php echo $button_edit; ?>" class="btn btn-primary"><i class="fa fa-pencil"></i></a>]]></add>
